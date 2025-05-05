@@ -23,7 +23,7 @@ class PredictionRecord(Base):
     
     # Metadata
     model_version = Column(String, nullable=False)
-    metadata = Column(JSON, nullable=True)
+    additional_data = Column(JSON, nullable=True)
 
 class ModelMetrics(Base):
     """Model for storing model performance metrics."""
