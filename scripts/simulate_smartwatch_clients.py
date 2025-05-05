@@ -75,7 +75,7 @@ class SmartwatchClient:
         if reading is None:
             return None
         
-        # Create a features dictionary with the feature columns
+        # Create a features dictionary with only the feature columns
         features = {}
         for i in range(1, 6):  # Assuming features 1-5
             feature_name = f"feature{i}"

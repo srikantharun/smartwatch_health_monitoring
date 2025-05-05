@@ -97,15 +97,24 @@ class ModelService:
         # Convert input dictionary to DataFrame
         input_df = pd.DataFrame([features_dict])
         
-        # Ensure all required features are present
+        # Filter out non-feature columns (like timestamp, user_id, user_name)
+        # Keep only columns that start with 'feature'
+        feature_cols = [col for col in input_df.columns if col.startswith('feature')]
+        
+        # Create a new DataFrame with only feature columns
+        processed_df = pd.DataFrame()
+        
+        # Ensure all required feature columns are present
         for col in self.feature_columns:
-            if col not in input_df.columns:
-                input_df[col] = 0  # Default value for missing features
+            if col in feature_cols:
+                processed_df[col] = input_df[col]
+            else:
+                processed_df[col] = 0  # Default value for missing features
         
         # Ensure correct column order
-        input_df = input_df[self.feature_columns]
+        processed_df = processed_df[self.feature_columns]
         
-        return input_df
+        return processed_df
     
     def predict(self, features: Dict) -> float:
         """
