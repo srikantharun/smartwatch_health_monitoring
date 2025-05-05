@@ -26,7 +26,9 @@ The model predicts a **Stress Level** score from 0-10, where higher values indic
 
 ## Setup Instructions
 
-### 1. Initialize the Environment
+### Option 1: Local Development
+
+#### 1. Initialize the Environment
 
 ```bash
 cd ~/smartwatch_health_monitoring
@@ -35,7 +37,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Generate Simulated Data
+#### 2. Generate Simulated Data
 
 Generate reference and current data for 5 virtual users over a week period:
 
@@ -49,7 +51,7 @@ This creates:
 - `data/current_data.csv` - Current data for predictions
 - Individual user data files in the data directory
 
-### 3. Train the Model
+#### 3. Train the Model
 
 Train a regression model to predict stress levels:
 
@@ -59,14 +61,14 @@ python train_smartwatch_model.py
 
 The model will be saved to `data/model.pkl`.
 
-### 4. Initialize the Database
+#### 4. Initialize the Database
 
 ```bash
 cd ..
 python -m app.db.init_db
 ```
 
-### 5. Start the API Server
+#### 5. Start the API Server
 
 ```bash
 uvicorn main:app --reload
@@ -74,7 +76,7 @@ uvicorn main:app --reload
 
 The API will be available at http://localhost:8000.
 
-### 6. Simulate Smartwatch Clients
+#### 6. Simulate Smartwatch Clients
 
 In a new terminal window:
 
@@ -87,6 +89,44 @@ python simulate_smartwatch_clients.py --interval 5
 
 This will simulate smartwatches sending data every 5 seconds.
 
+### Option 2: Docker Deployment
+
+For easier setup and deployment, you can use Docker Compose to run all components:
+
+#### 1. Build and Start the Services
+
+```bash
+# Navigate to project directory
+cd ~/smartwatch_health_monitoring
+
+# Start all services
+docker-compose up -d
+
+# Generate data and train model (first time only)
+docker-compose exec app bash -c "cd scripts && python generate_smartwatch_data.py && python train_smartwatch_model.py"
+
+# Initialize the database
+docker-compose exec app python -m app.db.init_db
+```
+
+This will start:
+- FastAPI application on http://localhost:8000
+- PostgreSQL database
+- Prefect server on http://localhost:4200
+- Client simulator service
+
+#### 2. Stop the Services
+
+```bash
+docker-compose down
+```
+
+#### 3. View Logs
+
+```bash
+docker-compose logs -f app
+```
+
 ## Exploring the Monitoring Features
 
 1. **API Documentation**: Visit http://localhost:8000/docs to see and test the API endpoints
@@ -96,6 +136,8 @@ This will simulate smartwatches sending data every 5 seconds.
    - Data Drift: http://localhost:8000/api/v1/monitoring/monitor-target
 
 3. **Metrics History**: http://localhost:8000/api/v1/monitoring/metrics
+
+4. **Prefect Dashboard**: Visit http://localhost:4200 to view workflow runs (Docker setup only)
 
 ## Understanding the Drift Detection
 
