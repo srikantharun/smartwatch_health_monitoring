@@ -82,14 +82,15 @@ class SmartwatchClient:
             if feature_name in reading:
                 features[feature_name] = float(reading[feature_name])
         
-        # Format for API
+        # Format for API - ensure we don't include metadata fields in features
         data = {
-            "features": features,
+            "features": features,  # Contains only feature1-feature5
             "metadata": {
                 "user_id": self.user_id,
                 "timestamp": reading["timestamp"] if "timestamp" in reading else datetime.now().isoformat(),
                 "device_type": "smartwatch",
-                "device_id": f"watch_{self.user_id}"
+                "device_id": f"watch_{self.user_id}",
+                "user_name": reading["user_name"] if "user_name" in reading else None
             }
         }
         

@@ -94,25 +94,21 @@ class ModelService:
         Returns:
             DataFrame: Processed input data
         """
-        # Convert input dictionary to DataFrame
-        input_df = pd.DataFrame([features_dict])
-        
-        # Filter out non-feature columns (like timestamp, user_id, user_name)
-        # Keep only columns that start with 'feature'
-        feature_cols = [col for col in input_df.columns if col.startswith('feature')]
-        
-        # Create a new DataFrame with only feature columns
+        # Create a new DataFrame with only required feature columns
         processed_df = pd.DataFrame()
         
+        # Filter out non-feature columns (like metadata fields)
+        model_features = [col for col in self.feature_columns if col.startswith('feature')]
+        
         # Ensure all required feature columns are present
-        for col in self.feature_columns:
-            if col in feature_cols:
-                processed_df[col] = input_df[col]
+        for col in model_features:
+            if col in features_dict:
+                processed_df[col] = [float(features_dict[col])]
             else:
-                processed_df[col] = 0  # Default value for missing features
+                processed_df[col] = [0.0]  # Default value for missing features
         
         # Ensure correct column order
-        processed_df = processed_df[self.feature_columns]
+        processed_df = processed_df[model_features]
         
         return processed_df
     
