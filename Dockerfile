@@ -14,7 +14,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application
-COPY . .
+COPY ./app ./app
+COPY ./scripts ./scripts
+COPY ./data ./data
+COPY ./main.py .
 
 # Create necessary directories
 RUN mkdir -p app/static app/templates/reports data .prefect

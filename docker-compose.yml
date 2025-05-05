@@ -3,7 +3,9 @@ version: '3.8'
 services:
   # FastAPI application
   app:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
     container_name: smartwatch-monitoring-app
     ports:
       - "8000:8000"
@@ -44,7 +46,7 @@ services:
 
   # Prefect server
   prefect:
-    image: prefecthq/prefect:2-latest
+    image: prefecthq/prefect:3-latest
     container_name: smartwatch-monitoring-prefect
     ports:
       - "4200:4200"
@@ -57,9 +59,11 @@ services:
 
   # Simulate smartwatch clients
   simulator:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
     container_name: smartwatch-client-simulator
-    command: python scripts/simulate_smartwatch_clients.py --interval 5
+    command: python scripts/simulate_smartwatch_clients.py --interval 5 --data-dir /app/data
     volumes:
       - ./data:/app/data
     networks:
@@ -68,6 +72,24 @@ services:
       - app
     restart: unless-stopped
 
+  # Grafana for monitoring visualizations
+  grafana:
+    image: grafana/grafana:10.3.1
+    container_name: smartwatch-monitoring-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+    depends_on:
+      - postgres
+
 networks:
   monitoring-network:
     driver: bridge
@@ -75,3 +97,4 @@ networks:
 volumes:
   postgres-data:
   prefect-data:
+  grafana-data:
