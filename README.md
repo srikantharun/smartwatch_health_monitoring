@@ -1,1 +1,129 @@
-# smartwatch_health_monitoring
+# Smartwatch Health Monitoring System
+
+This project demonstrates a machine learning monitoring system for smartwatch health data. It showcases how to implement drift detection, performance monitoring, and visualization for ML models deployed in a health application.
+
+## Overview
+
+The system simulates smartwatch devices sending health metrics to a central server, which uses a machine learning model to predict stress levels. It includes:
+
+1. **Data Generation**: Scripts to create realistic health data for multiple users
+2. **ML Model**: A regression model predicting stress levels from health metrics
+3. **Monitoring APIs**: FastAPI endpoints for predictions and monitoring
+4. **Visualization**: Evidently AI dashboards for model performance and data drift
+5. **Client Simulation**: Scripts to simulate smartwatch clients sending data
+
+## Health Metrics Explanation
+
+The system tracks 5 key health metrics from simulated smartwatches:
+
+- **Heart Rate Variability (feature1)**: Measures the variation in time between heartbeats. Higher values typically indicate better cardiovascular health and stress resilience.
+- **Activity Level (feature2)**: Normalized representation of daily steps and physical activity. Higher values indicate more active individuals.
+- **Sleep Quality (feature3)**: Represents overall sleep quality based on duration and interruptions. Higher values indicate better sleep.
+- **Resting Heart Rate (feature4)**: Normalized heart rate during periods of rest. Lower values typically indicate better cardiovascular fitness.
+- **Skin Temperature Variation (feature5)**: Normalized skin temperature relative to baseline. Can indicate stress, illness, or recovery state.
+
+The model predicts a **Stress Level** score from 0-10, where higher values indicate greater stress.
+
+## Setup Instructions
+
+### 1. Initialize the Environment
+
+```bash
+cd ~/smartwatch_health_monitoring
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 2. Generate Simulated Data
+
+Generate reference and current data for 5 virtual users over a week period:
+
+```bash
+cd scripts
+python generate_smartwatch_data.py
+```
+
+This creates:
+- `data/reference_data.csv` - Training data for the model
+- `data/current_data.csv` - Current data for predictions
+- Individual user data files in the data directory
+
+### 3. Train the Model
+
+Train a regression model to predict stress levels:
+
+```bash
+python train_smartwatch_model.py
+```
+
+The model will be saved to `data/model.pkl`.
+
+### 4. Initialize the Database
+
+```bash
+cd ..
+python -m app.db.init_db
+```
+
+### 5. Start the API Server
+
+```bash
+uvicorn main:app --reload
+```
+
+The API will be available at http://localhost:8000.
+
+### 6. Simulate Smartwatch Clients
+
+In a new terminal window:
+
+```bash
+cd ~/smartwatch_health_monitoring
+source venv/bin/activate
+cd scripts
+python simulate_smartwatch_clients.py --interval 5
+```
+
+This will simulate smartwatches sending data every 5 seconds.
+
+## Exploring the Monitoring Features
+
+1. **API Documentation**: Visit http://localhost:8000/docs to see and test the API endpoints
+
+2. **Monitoring Dashboards**:
+   - Model Performance: http://localhost:8000/api/v1/monitoring/monitor-model
+   - Data Drift: http://localhost:8000/api/v1/monitoring/monitor-target
+
+3. **Metrics History**: http://localhost:8000/api/v1/monitoring/metrics
+
+## Understanding the Drift Detection
+
+The system uses Evidently AI to detect and visualize two types of drift:
+
+1. **Data Drift**: Detects when the distribution of input features changes compared to the reference data. For example, if users' heart rate patterns change significantly over time.
+
+2. **Target Drift**: Detects when the relationship between features and the target variable changes. For example, if high heart rate variability no longer correlates with lower stress levels.
+
+The visualizations help identify which features are drifting and how severely.
+
+## Simulating Different Scenarios
+
+To simulate specific scenarios, you can modify the user profiles in `scripts/generate_smartwatch_data.py`:
+
+1. **Seasonal Changes**: Modify the base values of activity and temperature to reflect seasonal patterns
+2. **Health Events**: Create specific periods with unusual patterns in heart rate and sleep
+3. **User Behavior Changes**: Adjust the weekend/weekday modifiers to reflect changing work patterns
+
+## Project Structure
+
+- `app/` - FastAPI application
+  - `api/` - API routes and endpoints
+  - `core/` - Core configurations
+  - `db/` - Database models and session management
+  - `schemas/` - Pydantic schemas for validation
+  - `services/` - Business logic
+  - `workflows/` - Monitoring pipelines
+- `data/` - Reference and current data
+- `scripts/` - Utility scripts for simulation
+- `docs/` - Additional documentation

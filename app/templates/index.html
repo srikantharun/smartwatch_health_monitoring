@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            width: 90%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+        }
+        .nav {
+            background-color: #333;
+            overflow: hidden;
+        }
+        .nav a {
+            float: left;
+            display: block;
+            color: #f2f2f2;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+            font-size: 17px;
+        }
+        .nav a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        .nav a.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .card {
+            background-color: #f4f4f4;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .btn {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .btn-secondary {
+            background-color: #2196F3;
+        }
+        .btn-secondary:hover {
+            background-color: #0b7dda;
+        }
+        .btn-warning {
+            background-color: #ff9800;
+        }
+        .btn-warning:hover {
+            background-color: #e68a00;
+        }
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 10px;
+            overflow-x: auto;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            background-color: #f4f4f4;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-running {
+            background-color: #4CAF50;
+        }
+        .status-stopped {
+            background-color: #f44336;
+        }
+        .status-unknown {
+            background-color: #ff9800;
+        }
+        .tabs {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab-button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            font-size: 17px;
+        }
+        .tab-button:hover {
+            background-color: #ddd;
+        }
+        .tab-button.active {
+            background-color: #ccc;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .metric-box {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            background-color: white;
+        }
+        .metric-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .metric-value {
+            font-size: 24px;
+            color: #2196F3;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{{ title }}</h1>
+        <p>ML Model Monitoring Dashboard with FastAPI, Evidently AI, and Prefect</p>
+    </header>
+    
+    <div class="nav">
+        <a href="#" class="active" onclick="openTab(event, 'dashboard')">Dashboard</a>
+        <a href="#" onclick="openTab(event, 'predictions')">Predictions</a>
+        <a href="#" onclick="openTab(event, 'monitoring')">Monitoring</a>
+        <a href="#" onclick="openTab(event, 'prefect')">Prefect</a>
+        <a href="#" onclick="openTab(event, 'grafana')">Grafana</a>
+        <a href="/docs" target="_blank">API Docs</a>
+    </div>
+    
+    <div class="container">
+        <div id="dashboard" class="tab-content" style="display: block;">
+            <div class="card">
+                <h2>ML Monitoring Dashboard</h2>
+                <p>Welcome to the ML Monitoring Dashboard. This dashboard provides tools to monitor your ML model's performance and data drift.</p>
+                
+                <div class="grid">
+                    <div class="metric-box">
+                        <div class="metric-title">Prefect Status</div>
+                        <div class="metric-value">
+                            <span id="prefectStatus" class="status-indicator status-unknown"></span>
+                            <span id="prefectStatusText">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-box">
+                        <div class="metric-title">Latest Model Performance</div>
+                        <div class="metric-value" id="latestRmse">Loading...</div>
+                    </div>
+                    
+                    <div class="metric-box">
+                        <div class="metric-title">Data Drift Status</div>
+                        <div class="metric-value" id="dataDriftStatus">Loading...</div>
+                    </div>
+                </div>
+                
+                <h3>Quick Actions</h3>
+                <button class="btn" onclick="runBatchPredictions()">Run Batch Predictions</button>
+                <button class="btn btn-secondary" onclick="runAllPipelines()">Run All Monitoring Pipelines</button>
+                <a href="/api/v1/monitoring/metrics" class="btn" target="_blank">View All Metrics</a>
+            </div>
+        </div>
+        
+        <div id="predictions" class="tab-content">
+            <div class="card">
+                <h2>Predictions</h2>
+                <p>Run batch predictions and manage prediction data.</p>
+                
+                <h3>Batch Predictions</h3>
+                <button class="btn" onclick="runBatchPredictions()">Run Batch Predictions</button>
+                <button class="btn btn-secondary" onclick="generatePredictionWithPrefect()">Generate Predictions with Prefect</button>
+                
+                <h3>Make Single Prediction</h3>
+                <form id="predictionForm">
+                    <div style="margin-bottom: 15px;">
+                        <label for="feature1">Feature 1:</label>
+                        <input type="number" id="feature1" name="feature1" step="0.1" value="1.5" style="width: 100px; padding: 5px; margin-right: 10px;">
+                        
+                        <label for="feature2">Feature 2:</label>
+                        <input type="number" id="feature2" name="feature2" step="0.1" value="2.0" style="width: 100px; padding: 5px; margin-right: 10px;">
+                        
+                        <label for="feature3">Feature 3:</label>
+                        <input type="number" id="feature3" name="feature3" step="0.1" value="3.0" style="width: 100px; padding: 5px;">
+                    </div>
+                    
+                    <button type="submit" class="btn">Make Prediction</button>
+                </form>
+                
+                <div id="predictionResult" style="margin-top: 15px;"></div>
+                
+                <h3>API Example</h3>
+                <pre>
+import requests
+import json
+
+# Make a prediction
+prediction_data = {
+    "features": {
+        "feature1": 1.5,
+        "feature2": 2.0,
+        "feature3": 3.0
+    }
+}
+
+response = requests.post(
+    "http://localhost:8000/api/v1/predictions/predict",
+    json=prediction_data
+)
+
+print(json.dumps(response.json(), indent=2))
+                </pre>
+            </div>
+        </div>
+        
+        <div id="monitoring" class="tab-content">
+            <div class="card">
+                <h2>Model Monitoring</h2>
+                <p>Generate and view model performance and data drift reports.</p>
+                
+                <h3>Reports</h3>
+                <button class="btn" onclick="generateModelReport(false)">Generate Model Report</button>
+                <button class="btn btn-secondary" onclick="generateModelReport(true)">Generate with Prefect</button>
+                <div id="modelReportLink" style="margin-top: 10px;"></div>
+                
+                <button class="btn" style="margin-top: 20px;" onclick="generateDriftReport(false)">Generate Drift Report</button>
+                <button class="btn btn-secondary" onclick="generateDriftReport(true)">Generate with Prefect</button>
+                <div id="driftReportLink" style="margin-top: 10px;"></div>
+                
+                <h3>Scheduled Monitoring</h3>
+                <button class="btn btn-warning" onclick="runAllPipelines()">Run All Monitoring Pipelines</button>
+            </div>
+        </div>
+        
+        <div id="prefect" class="tab-content">
+            <div class="card">
+                <h2>Prefect Orchestration</h2>
+                <p>Manage Prefect workflows and scheduled tasks.</p>
+                
+                <div style="margin-bottom: 20px;">
+                    <h3>Prefect Status</h3>
+                    <div style="margin-bottom: 10px;">
+                        <span id="prefectStatusDetail" class="status-indicator status-unknown"></span>
+                        <span id="prefectStatusTextDetail">Loading...</span>
+                    </div>
+                    <a href="http://localhost:4200" target="_blank" class="btn">Open Prefect UI</a>
+                </div>
+                
+                <h3>Workflows</h3>
+                <ul id="prefectFlowsList" style="list-style-type: none; padding: 0;">
+                    <li style="padding: 10px; border: 1px solid #ddd; margin-bottom: 5px; border-radius: 5px;">
+                        <strong>Batch Prediction Pipeline</strong>
+                        <p>Schedule: Every 6 hours</p>
+                        <button class="btn" onclick="runBatchPredictions()">Run Now</button>
+                    </li>
+                    <li style="padding: 10px; border: 1px solid #ddd; margin-bottom: 5px; border-radius: 5px;">
+                        <strong>Data Monitoring Pipeline</strong>
+                        <p>Schedule: Every 12 hours</p>
+                        <button class="btn" onclick="runPrefectDataMonitoring()">Run Now</button>
+                    </li>
+                    <li style="padding: 10px; border: 1px solid #ddd; margin-bottom: 5px; border-radius: 5px;">
+                        <strong>Model Monitoring Pipeline</strong>
+                        <p>Schedule: Daily at midnight</p>
+                        <button class="btn" onclick="runPrefectModelMonitoring()">Run Now</button>
+                    </li>
+                    <li style="padding: 10px; border: 1px solid #ddd; margin-bottom: 5px; border-radius: 5px;">
+                        <strong>Full Monitoring Pipeline</strong>
+                        <p>Schedule: Weekly on Monday</p>
+                        <button class="btn" onclick="runAllPipelines()">Run Now</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div id="grafana" class="tab-content">
+            <div class="card">
+                <h2>Grafana Dashboards</h2>
+                <p>Connect to Grafana for comprehensive monitoring visualizations.</p>
+                
+                <a href="http://localhost:3000" target="_blank" class="btn">Open Grafana</a>
+                
+                <h3>Available Dashboards</h3>
+                <ul style="list-style-type: none; padding: 0;">
+                    <li style="padding: 10px; border: 1px solid #ddd; margin-bottom: 5px; border-radius: 5px;">
+                        <strong>Model Performance Dashboard</strong>
+                        <p>Visualize metrics like RMSE, MAE, and R² over time</p>
+                        <a href="http://localhost:3000/d/model-performance" target="_blank" class="btn">View Dashboard</a>
+                    </li>
+                    <li style="padding: 10px; border: 1px solid #ddd; margin-bottom: 5px; border-radius: 5px;">
+                        <strong>Data Drift Dashboard</strong>
+                        <p>Monitor feature drift and distribution changes</p>
+                        <a href="http://localhost:3000/d/data-drift" target="_blank" class="btn">View Dashboard</a>
+                    </li>
+                </ul>
+                
+                <h3>Setup Grafana</h3>
+                <p>Grafana can be started using Docker:</p>
+                <pre>
+docker-compose up -d grafana
+                </pre>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 ML Monitoring with FastAPI, Evidently AI, and Prefect</p>
+    </footer>
+    
+    <script>
+        // Check Prefect status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkPrefectStatus();
+            fetchLatestMetrics();
+            // Set active tab based on hash
+            const hash = window.location.hash.substring(1) || 'dashboard';
+            openTab({ currentTarget: document.querySelector(`.nav a[onclick*="${hash}"]`) || document.querySelector('.nav a.active') }, hash);
+        });
+        
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].style.display = 'none';
+            }
+            
+            const tabLinks = document.getElementsByClassName('nav a');
+            for (let i = 0; i < tabLinks.length; i++) {
+                tabLinks[i].className = tabLinks[i].className.replace(' active', '');
+            }
+            
+            document.getElementById(tabName).style.display = 'block';
+            if (evt && evt.currentTarget) {
+                evt.currentTarget.className += ' active';
+            }
+            
+            window.location.hash = tabName;
+        }
+        
+        async function checkPrefectStatus() {
+            try {
+                const response = await fetch('/api/v1/monitoring/prefect-status');
+                const data = await response.json();
+                
+                const statusIndicator = document.getElementById('prefectStatus');
+                const statusText = document.getElementById('prefectStatusText');
+                const statusIndicatorDetail = document.getElementById('prefectStatusDetail');
+                const statusTextDetail = document.getElementById('prefectStatusTextDetail');
+                
+                if (data.status === 'running') {
+                    statusIndicator.className = 'status-indicator status-running';
+                    statusText.textContent = 'Running';
+                    statusIndicatorDetail.className = 'status-indicator status-running';
+                    statusTextDetail.textContent = `Running (v${data.api_version})`;
+                } else if (data.status === 'not_running') {
+                    statusIndicator.className = 'status-indicator status-stopped';
+                    statusText.textContent = 'Stopped';
+                    statusIndicatorDetail.className = 'status-indicator status-stopped';
+                    statusTextDetail.textContent = 'Stopped - Server not running';
+                } else {
+                    statusIndicator.className = 'status-indicator status-unknown';
+                    statusText.textContent = 'Unknown';
+                    statusIndicatorDetail.className = 'status-indicator status-unknown';
+                    statusTextDetail.textContent = 'Unknown - Check server logs';
+                }
+            } catch (error) {
+                console.error('Error checking Prefect status:', error);
+                document.getElementById('prefectStatus').className = 'status-indicator status-unknown';
+                document.getElementById('prefectStatusText').textContent = 'Error';
+                document.getElementById('prefectStatusDetail').className = 'status-indicator status-unknown';
+                document.getElementById('prefectStatusTextDetail').textContent = 'Error checking status';
+            }
+        }
+        
+        async function fetchLatestMetrics() {
+            try {
+                const response = await fetch('/api/v1/monitoring/metrics');
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    const latestMetrics = data[0];
+                    const rmse = latestMetrics.metrics.find(m => m.name === 'rmse');
+                    if (rmse) {
+                        document.getElementById('latestRmse').textContent = rmse.value.toFixed(4);
+                    } else {
+                        document.getElementById('latestRmse').textContent = 'N/A';
+                    }
+                } else {
+                    document.getElementById('latestRmse').textContent = 'No data available';
+                }
+                
+                // Get drift status (just a placeholder for now)
+                document.getElementById('dataDriftStatus').textContent = 'No drift detected';
+            } catch (error) {
+                console.error('Error fetching metrics:', error);
+                document.getElementById('latestRmse').textContent = 'Error loading metrics';
+                document.getElementById('dataDriftStatus').textContent = 'Error loading drift status';
+            }
+        }
+        
+        // Initialize prediction form
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const feature1 = parseFloat(document.getElementById('feature1').value);
+            const feature2 = parseFloat(document.getElementById('feature2').value);
+            const feature3 = parseFloat(document.getElementById('feature3').value);
+            
+            const predictionData = {
+                features: {
+                    feature1: feature1,
+                    feature2: feature2,
+                    feature3: feature3
+                }
+            };
+            
+            try {
+                const response = await fetch('/api/v1/predictions/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(predictionData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('predictionResult').innerHTML = `
+                        <div style="padding: 15px; background-color: #e8f5e9; border-radius: 5px; border: 1px solid #81c784;">
+                            <strong>Prediction Result:</strong> ${result.prediction.toFixed(4)}<br>
+                            <strong>Model Version:</strong> ${result.model_version}<br>
+                            <strong>Timestamp:</strong> ${new Date(result.timestamp).toLocaleString()}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('predictionResult').innerHTML = `
+                        <div style="padding: 15px; background-color: #ffebee; border-radius: 5px; border: 1px solid #e57373;">
+                            <strong>Error:</strong> ${result.detail || 'An error occurred'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('predictionResult').innerHTML = `
+                    <div style="padding: 15px; background-color: #ffebee; border-radius: 5px; border: 1px solid #e57373;">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        });
+        
+        async function generateModelReport(usePrefect = false) {
+            try {
+                const url = usePrefect ? 
+                    '/api/v1/monitoring/monitor-model?use_prefect=true' : 
+                    '/api/v1/monitoring/monitor-model';
+                    
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const linkContainer = document.getElementById('modelReportLink');
+                    linkContainer.innerHTML = `
+                        <div style="padding: 10px; background-color: #e8f5e9; border-radius: 5px; margin-bottom: 10px;">
+                            Report generated successfully ${usePrefect ? 'with Prefect' : ''}
+                        </div>
+                    `;
+                    
+                    const link = document.createElement('a');
+                    link.href = data.html_path;
+                    link.textContent = 'View Model Performance Report';
+                    link.target = '_blank';
+                    link.className = 'btn';
+                    linkContainer.appendChild(link);
+                } else {
+                    document.getElementById('modelReportLink').innerHTML = `
+                        <div style="padding: 10px; background-color: #ffebee; border-radius: 5px;">
+                            <strong>Error:</strong> ${data.detail || 'Failed to generate report'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('modelReportLink').innerHTML = `
+                    <div style="padding: 10px; background-color: #ffebee; border-radius: 5px;">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function generateDriftReport(usePrefect = false) {
+            try {
+                const url = usePrefect ? 
+                    '/api/v1/monitoring/monitor-target?use_prefect=true' : 
+                    '/api/v1/monitoring/monitor-target';
+                    
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const linkContainer = document.getElementById('driftReportLink');
+                    linkContainer.innerHTML = `
+                        <div style="padding: 10px; background-color: #e8f5e9; border-radius: 5px; margin-bottom: 10px;">
+                            Drift report generated successfully ${usePrefect ? 'with Prefect' : ''}
+                        </div>
+                    `;
+                    
+                    const link = document.createElement('a');
+                    link.href = data.html_path;
+                    link.textContent = 'View Data Drift Report';
+                    link.target = '_blank';
+                    link.className = 'btn';
+                    linkContainer.appendChild(link);
+                } else {
+                    document.getElementById('driftReportLink').innerHTML = `
+                        <div style="padding: 10px; background-color: #ffebee; border-radius: 5px;">
+                            <strong>Error:</strong> ${data.detail || 'Failed to generate report'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('driftReportLink').innerHTML = `
+                    <div style="padding: 10px; background-color: #ffebee; border-radius: 5px;">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function runBatchPredictions() {
+            try {
+                const response = await fetch('/api/v1/monitoring/run-batch-predictions');
+                const data = await response.json();
+                
+                alert(data.message || 'Batch prediction pipeline started');
+            } catch (error) {
+                alert(`Error starting batch predictions: ${error.message}`);
+            }
+        }
+        
+        async function runAllPipelines() {
+            try {
+                const response = await fetch('/api/v1/monitoring/run-all-pipelines');
+                const data = await response.json();
+                
+                alert(data.message || 'All monitoring pipelines started');
+            } catch (error) {
+                alert(`Error starting pipelines: ${error.message}`);
+            }
+        }
+        
+        async function runPrefectDataMonitoring() {
+            try {
+                const response = await fetch('/api/v1/monitoring/monitor-target?use_prefect=true');
+                const data = await response.json();
+                
+                alert('Data monitoring pipeline started with Prefect');
+            } catch (error) {
+                alert(`Error starting data monitoring: ${error.message}`);
+            }
+        }
+        
+        async function runPrefectModelMonitoring() {
+            try {
+                const response = await fetch('/api/v1/monitoring/monitor-model?use_prefect=true');
+                const data = await response.json();
+                
+                alert('Model monitoring pipeline started with Prefect');
+            } catch (error) {
+                alert(`Error starting model monitoring: ${error.message}`);
+            }
+        }
+        
+        async function generatePredictionWithPrefect() {
+            runBatchPredictions();
+        }
+    </script>
+</body>
+</html>
