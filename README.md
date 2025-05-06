@@ -127,6 +127,26 @@ docker-compose down
 docker-compose logs -f app
 ```
 
+#### 4. Troubleshooting
+
+Sometimes we may see the monitoring pipeline alone did not work as expected.
+Try running it as
+```bash
+docker exec smartwatch-monitoring-app python -m app.workflows.monitoring_pipeline
+```
+
+If there are changes carried out in app/workflow/tasks/monitoring_pipeline.py, we need to rebuild the docker image
+
+```bash
+docker-compose down --rmi all
+docker-compose build --no-cache
+docker-compose exec app bash -c "cd scripts && python generate_smartwatch_data.py && python train_smartwatch_model.py"
+docker-compose exec app python -m app.db.init_db
+
+docker exec smartwatch-monitoring-app python -c "from app.workflows.tasks.monitoring_tasks import get_reference_data, get_current_data, generate_model_performance_metrics; import pandas as pd; ref_data = get_reference_data(); cur_data = get_current_data(); common_cols = list(set(ref_data.columns).intersection(set(cur_data.columns))); ref_data = ref_data[common_cols]; cur_data = cur_data[common_cols]; generate_model_performance_metrics(ref_data, cur_data)"
+```
+
+
 ## Exploring the Monitoring Features
 
 1. **API Documentation**: Visit http://localhost:8000/docs to see and test the API endpoints
